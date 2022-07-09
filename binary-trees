@@ -1,0 +1,34 @@
+Binary Trees and VariantsBinary Trees and Variants
+5 Types
+
+Definition
+Node: It represents a termination point in a tree.
+Root: A tree’s topmost node. 
+Parent: Each node (apart from the root) in a tree that has at least one sub-node of its own is called a parent node.
+Child: A node that straightway came from a parent node when moving away from the root is the child node.
+Leaf Node: These are external nodes. They are the nodes that have no child.
+Internal Node: As the name suggests, these are inner nodes with at least one child.
+Depth of a Tree: The number of edges from the tree’s node to the root is.
+Height of a Tree: It is the number of edges from the node to the deepest leaf. The tree height is also considered the root height.
+
+Composed of
+Data element
+Pointer to left subtree
+Pointer to right subtree
+
+Types of Binary Trees
+1. Full Binary Tree - has either 0 children or two children
+2. Complete Binary Tree - All nodes are filled with two children except for last level
+3. Perfect Binary Tree - All nodes are filled with two children
+4. Balanced Binary Tree - The height of the left and right subtrees varys by no more than 1.
+5. Degenerate Binary Tree - Every node only has one child.
+
+Benefits of a Binary Tree
+The search operation in a binary tree is faster as compared to other trees
+Only two traversals are enough to provide the elements in sorted order
+It is easy to pick up the maximum and minimum elements
+Graph traversal also uses binary trees
+Converting different postfix and prefix expressions are possible using binary trees
+
+Source: https://www.upgrad.com/blog/5-types-of-binary-tree/
+

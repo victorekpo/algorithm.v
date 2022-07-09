@@ -1,0 +1,62 @@
+An algorithm is an explicit, precise, unambiguous, mechanically-executable
+sequence of elementary instructions, usually intended to accomplish a specific
+purpose. 
+Source: Algorithms by Jeff Erickson
+
+For example, here is an algorithm for singing that annoying song “99
+Bottles of Water on the Wall”, for arbitrary values of 99:
+
+BottlesOfWater(n):
+  For i ← n down to 1
+    Sing “i bottles of water on the wall, i bottles of water,”
+    Sing “Take one down, pass it around, i − 1 bottles of water on the wall.”
+  Sing “No bottles of water on the wall, no bottles of water,”
+  Sing “Go to the store, buy some more, n bottles of water on the wall.”
+
+The word “algorithm” does not derive, as algorithmophobic classicists might
+guess, from the Greek roots arithmos (άριθμός), meaning “number”, and algos 
+(ἄλγος), meaning “pain”. Rather, it is a corruption of the name of the 9th century
+Persian scholar Muh. ammad ibn Mus¯a al-Khw¯ arizm¯ ¯ Al-Khwarizm ¯ ¯ is perhaps
+best known as the writer of the treatise Al-Kitab al-mukhtasar fıhısab al-ğabr
+wa’l-muqabala ¯ , from which the modern word algebra derives. In a different
+treatise, al-Khwarizm described the modern decimal system for writing and
+manipulating numbers—in particular, the use of a small circle or sifr to represent
+a missing quantity—which had been developed in India several centuries earlier.
+
+The methods described in this latter treatise, using either written figures or
+counting stones, became known in English as algorism or augrym, and its figures
+became known in English as ciphers.
+
+https://www.historyofinformation.com/detail.php?entryid=243
+About 825 Abū ʿAbdallāh Muḥammad ibn Mūsā al-Khwārizmi, a Persian mathematician, 
+astronomer, and geographer at the House of Wisdom (Bait al-Hikma) in Baghdad, developed the 
+concept of a written process to be followed to achieve some goal. Al-Khwarizmi wrote a book 
+on Hindu-Arabic numerals, giving the name algorithm to this process through the Latinization 
+of his last name:
+
+"The Arabic text is lost but a Latin translation, Algoritmi de numero Indorum (in English 
+Al-Khwarizmi on the Hindu Art of Reckoning) gave rise to the word algorithm deriving from his 
+name in the title. Unfortunately the Latin translation . . . .  is known to be much changed 
+from al-Khwarizmi's original text (of which even the title is unknown). The work describes the 
+Hindu place-value system of numerals based on 1, 2, 3, 4, 5, 6, 7, 8, 9, and 0. The first use 
+of zero as a place holder in positional base notation was probably due to al-Khwarizmi in this 
+work. Methods for arithmetical calculation are given, and a method to find square roots is known 
+to have been in the Arabic original although it is missing from the Latin version" 
+(http://www-groups.dcs.st-and.ac.uk/~history/Biographies/Al-Khwarizmi.html).
+
+Although both place-value notation and al-Khwarizm ¯ ¯ı’s works were already
+known by some European scholars, the “Hindu-Arabic” numeric system was
+popularized in Europe by the medieval Italian mathematician and tradesman
+Leonardo of Pisa, better known as Fibonacci. Thanks in part to his 1202 book
+Liber Abaci, written figures began to replace the counting table (then known as
+an abacus) and finger arithmetic as the preferred platform for calculation in 
+Europe in the 13th century—not because written decimal figures were easier to
+learn or use, but because they provided an audit trail. Ciphers became common
+in Western Europe only with the advent of movable type, and truly ubiquitous
+only after cheap paper became plentiful in the early 19th century.
+Eventually the word algorism evolved into the modern algorithm, via folk
+etymology from the Greek arithmos (and perhaps the previously mentioned
+algos). Thus, until very recently, the word algorithm referred exclusively
+to mechanical techniques for place-value arithmetic using “Arabic” numerals.
+People trained in the fast and reliable execution of these procedures were called
+algorists or computators, or more simply, computers.
