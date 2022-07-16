@@ -1139,14 +1139,14 @@ void CheckForOpen()
    if(AccountBalance() <= 500)
      {
       accountMarg = 500;
-      maxLimits=10;
+      maxLimits=5;
       maxLoop=2;
       lowestProfit = -75;
      }
    if(AccountBalance() <= 100)
      {
       accountMarg = 800;
-      maxLimits=10;
+      maxLimits=2;
       maxLoop=1;
       lowestProfit = -20;
      }
@@ -1217,6 +1217,7 @@ void CheckForOpen()
             && isThisBarBEARISH(5)
             && isThisBarBEARISH(15)
             && isThisBarBEARISH(30)
+         //   && isThisBarBEARISH(60)  
             && (getMA_15() < currentPrice || getMA_15() < getMA_15_20())
          )
         )
@@ -1271,6 +1272,7 @@ void CheckForOpen()
             && isThisBarBULLISH(5)
             && isThisBarBULLISH(15)
             && isThisBarBULLISH(30)
+          //  && isThisBarBULLISH(60)
             && (getMA_15() > currentPrice || getMA_15() > getMA_15_20())
          )
         )
