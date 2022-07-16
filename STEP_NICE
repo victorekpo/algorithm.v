@@ -698,9 +698,9 @@ void checkPendingOrders()
            {
 
             double orderPrice = OrderGetDouble(ORDER_PRICE_OPEN);
-            double gap = 5*Point;
-            if((orderPrice > (currentPrice+gap) && (OrderType() == OP_SELLSTOP || OrderType() == OP_SELLLIMIT))
-               || (orderPrice < (currentPrice-gap) && (OrderType() == OP_BUYSTOP || OrderType() == OP_BUYLIMIT)) )
+            double gap = 10*Point;
+            if((orderPrice > (currentPrice+gap) && isThisBarBEARISH())
+               || (orderPrice < (currentPrice-gap) && isThisBarBULLISH()))
               {
                m_trade.OrderDelete(ticket);
               }
