@@ -1230,7 +1230,7 @@ void CheckForOpen()
             && (iLow(Symbol(),PERIOD_M30,1) < currentPrice
                 || (iLow(Symbol(),PERIOD_M30,1) > currentPrice
                     && percdiff(currentPrice, getLowestPrice(30,2)) < 0.25)
-                    && percdiff(iLow(Symbol(),PERIOD_M30,0),currentPrice) > 0.15)
+                    && percdiff(iLow(Symbol(),PERIOD_M30,0),currentPrice) > 0.2)
             //   getMA_60_20() > currentHigh_H1
             //   || getMA_15_20() > currentHigh_M15
             //   || getMA_5_9() > currentHigh_M5
@@ -1285,7 +1285,7 @@ void CheckForOpen()
             && (iHigh(Symbol(),PERIOD_M30,1) > currentPrice
                 || (iHigh(Symbol(),PERIOD_M30,1) < currentPrice
                     && percdiff(getHighestPrice(30,2), currentPrice) < 0.25)
-                    && percdiff(currentPrice,iHigh(Symbol(),PERIOD_M30,0)) > 0.15)
+                    && percdiff(currentPrice,iHigh(Symbol(),PERIOD_M30,0)) > 0.2)
             //    getMA_60_20() < currentLow_H1
             //    || getMA_15_20() < currentLow_M15
             //    || getMA_5_9() < currentLow_M5
