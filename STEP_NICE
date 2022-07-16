@@ -1180,7 +1180,7 @@ void CheckForOpen()
          //  SendNotification("taking order now");
          for(int i = 0; i < maxLoop; i++)
            {
-            orderPlaced=OrderSend(Symbol(),OP_SELLSTOP,lotSells(),(Ask-(14*Point)),3,0,0,"algorithm.V_SELLLIMIT",MILLIONDOLLARBOT,0,Red);
+            orderPlaced=OrderSend(Symbol(),OP_SELLSTOP,lotSells(),(Ask-(10*Point)),3,0,0,"algorithm.V_SELLLIMIT",MILLIONDOLLARBOT,0,Red);
            }
          continueOrders = true;
          notifyCount = 0;
@@ -1219,7 +1219,7 @@ void CheckForOpen()
          //  SendNotification("taking order now");
          for(int i = 0; i < maxLoop; i++)
            {
-            orderPlaced=OrderSend(Symbol(),OP_BUYSTOP,lotSells(),(Bid+(14*Point)),3,0,0,"algorithm.V_BUYLIMIT",MILLIONDOLLARBOT,0,Red);
+            orderPlaced=OrderSend(Symbol(),OP_BUYSTOP,lotSells(),(Bid+(10*Point)),3,0,0,"algorithm.V_BUYLIMIT",MILLIONDOLLARBOT,0,Red);
            }
          continueOrders = true;
          notifyCount = 0;
