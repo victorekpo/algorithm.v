@@ -686,7 +686,7 @@ double getMA_1_200(const int index=0)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void checkPendingOrders()
+bool checkPendingOrders()
   {
    int ord_total=OrdersTotal();
    if(ord_total > 0)
@@ -703,12 +703,13 @@ void checkPendingOrders()
                || (orderPrice < (currentPrice-gap) && isThisBarBULLISH()))
               {
                m_trade.OrderDelete(ticket);
+               return false;
               }
 
            }
         }
      }
-   return;
+   return true;
   }
 
 
@@ -811,6 +812,28 @@ int calculateSellLimitOrders()
    return(selllimits);
 
   }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int calculateSellStopOrders()
+  {
+   int sellstops=0;
+
+   for(int i=0; i<OrdersTotal(); i++)
+     {
+      if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false)
+         break;
+      if(OrderSymbol()==Symbol() && OrderMagicNumber()==MILLIONDOLLARBOT)
+        {
+         if(OrderType()==OP_SELLSTOP)
+            sellstops++;
+        }
+     }
+
+   return(sellstops);
+
+  }
 //+------------------------------------------------------------------+
 //| Calculate open SELL positions                                         |
 //+------------------------------------------------------------------+
@@ -882,7 +905,7 @@ void deletePendingScalp()
       for(int i=ord_total-1; i>=0; i--)
         {
          ulong ticket=OrderGetTicket(i);
-         if(OrderSelect(ticket) && OrderGetString(ORDER_SYMBOL)==Symbol() && (OrderComment()== "algorithm.V_BUYLIMIT" || OrderComment()== "algorithm.V_SELLLIMIT"))
+         if(OrderSelect(ticket) && OrderGetString(ORDER_SYMBOL)==Symbol() && (OrderComment()== "algorithm.V_BUYSTOP" || OrderComment()== "algorithm.V_SELLSTOP"))
            {
             m_trade.OrderDelete(ticket);
            }
@@ -1136,17 +1159,20 @@ void CheckForOpen()
 
 // Alert(priceHighest_M1_75, " ", Bid, " ", (priceHighest_M1_75 - Bid));
 
-   if((calculateBuyLimitOrders() + calculateSellLimitOrders()) >= maxLimits
+   if(((calculateBuyStopOrders() + calculateSellStopOrders()) > maxLimits && !checkPendingOrders())
       || (AccountInfoDouble(ACCOUNT_MARGIN_LEVEL) < accountMarg
           && ((calculateALLBuyOrders() + calculateALLSellOrders()) != 0))
      )
      {
-      Sleep(2000);
       deletePendingHODL();
       deletePendingScalp();
      }
 
-   if(AccountInfoDouble(ACCOUNT_MARGIN_LEVEL) > accountMarg || (calculateALLBuyOrders() == 0 && calculateALLSellOrders() == 0)) // make sure we have enough money
+//  Alert(getMA_60_20(), " ", currentPrice);
+
+   if((AccountInfoDouble(ACCOUNT_MARGIN_LEVEL) > accountMarg
+       || (calculateALLBuyOrders() == 0 && calculateALLSellOrders() == 0))
+      && (calculateBuyStopOrders() + calculateSellStopOrders()) <= maxLimits) // make sure we have enough money
      {
       // *** DAY TRADING ***
 
@@ -1178,14 +1204,22 @@ void CheckForOpen()
         {
 
          //  SendNotification("taking order now");
-         for(int i = 0; i < maxLoop; i++)
-           {
-            orderPlaced=OrderSend(Symbol(),OP_SELLSTOP,lotSells(),(Ask-(10*Point)),3,0,0,"algorithm.V_SELLLIMIT",MILLIONDOLLARBOT,0,Red);
-           }
-         continueOrders = true;
-         notifyCount = 0;
-         return;
+         if(
 
+            percdiff(getMA_5_9(), currentHigh_M5) < 0.2
+            //   getMA_60_20() > currentHigh_H1
+            //   || getMA_15_20() > currentHigh_M15
+            //   || getMA_5_9() > currentHigh_M5
+         )
+           {
+            for(int i = 0; i < maxLoop; i++)
+              {
+               orderPlaced=OrderSend(Symbol(),OP_SELLSTOP,lotSells(),(Ask-(12*Point)),3,0,0,"algorithm.V_SELLSTOP",MILLIONDOLLARBOT,0,Red);
+              }
+            continueOrders = true;
+            notifyCount = 0;
+            return;
+           }
         }
 
       // BUY Order Logic
@@ -1217,13 +1251,21 @@ void CheckForOpen()
         {
          // Alert("here2");
          //  SendNotification("taking order now");
-         for(int i = 0; i < maxLoop; i++)
+         if(
+            percdiff(currentLow_M5, getMA_5_9()) < 0.2
+            //    getMA_60_20() < currentLow_H1
+            //    || getMA_15_20() < currentLow_M15
+            //    || getMA_5_9() < currentLow_M5
+         )
            {
-            orderPlaced=OrderSend(Symbol(),OP_BUYSTOP,lotSells(),(Bid+(10*Point)),3,0,0,"algorithm.V_BUYLIMIT",MILLIONDOLLARBOT,0,Red);
+            for(int i = 0; i < maxLoop; i++)
+              {
+               orderPlaced=OrderSend(Symbol(),OP_BUYSTOP,lotSells(),(Bid+(12*Point)),3,0,0,"algorithm.V_BUYSTOP",MILLIONDOLLARBOT,0,Red);
+              }
+            continueOrders = true;
+            notifyCount = 0;
+            return;
            }
-         continueOrders = true;
-         notifyCount = 0;
-         return;
         }
 
      }
@@ -1276,23 +1318,23 @@ void CheckForClose()
            {
 
             // check for DAY TRADES
-            if(m_position.Comment() == "algorithm.V_SELLLIMIT" || m_position.Comment() == "algorithm.V_BUYLIMIT")
+            if(m_position.Comment() == "algorithm.V_SELLSTOP" || m_position.Comment() == "algorithm.V_BUYSTOP")
               {
 
                if(m_position.Profit() < lowestProf[i])
                   lowestProf[i]=m_position.Profit();
                if(m_position.Profit() > highestProf[i])
                   highestProf[i]=m_position.Profit();
-             //  Alert("LOWEST PROFIT ",lowestProf[i]);
-            //   Alert("HIGHEST PROFIT ",highestProf[i]);
-   
+               //  Alert("LOWEST PROFIT ",lowestProf[i]);
+               //   Alert("HIGHEST PROFIT ",highestProf[i]);
+
                orderTime[i] = TimeCurrent() - m_position.Time();
-            //   Alert("elapsed ", orderTime[i]);
-               
+               //   Alert("elapsed ", orderTime[i]);
+
                // Take Profit Logic
                if(lowestProf[i] < lowestProfit || orderTime[i] > 15)
-                  takeProfit = 0;
-               
+                  takeProfit = 0.5;
+
                if((m_position.Profit() >= takeProfit && m_position.PositionType() == POSITION_TYPE_SELL)
                   || (m_position.Profit() >= takeProfit && m_position.PositionType() == POSITION_TYPE_BUY))
                  {
