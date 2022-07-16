@@ -897,6 +897,21 @@ double checkCurrentBuyStopPrice()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+int calculateNewOrders()
+  {
+   int news=0;
+
+   for(int i=PositionsTotal()-1; i>=0; i--) // returns the number of current positions
+      if(m_position.SelectByIndex(i))     // selects the position by index for further access to its properties
+         if(TimeCurrent() - m_position.Time() < 10)
+            news++;
+   return(news);
+
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void deletePendingScalp()
   {
    int ord_total=OrdersTotal();
@@ -1162,7 +1177,7 @@ void CheckForOpen()
    if(((calculateBuyStopOrders() + calculateSellStopOrders()) > maxLimits && !checkPendingOrders())
       || (AccountInfoDouble(ACCOUNT_MARGIN_LEVEL) < accountMarg
           && ((calculateALLBuyOrders() + calculateALLSellOrders()) != 0))
-      || (calculateBuyOrders() + calculateSellOrders() > 1)
+      || (calculateNewOrders() > 1)
      )
      {
       deletePendingHODL();
@@ -1173,7 +1188,7 @@ void CheckForOpen()
 //Alert(percdiff(8635, 8639), " ", getLowestPrice(60,2), " ", currentPrice);
    if((AccountInfoDouble(ACCOUNT_MARGIN_LEVEL) > accountMarg
        || (calculateALLBuyOrders() == 0 && calculateALLSellOrders() == 0))
-      && (calculateBuyStopOrders() + calculateSellStopOrders()) <= maxLimits) // make sure we have enough money
+      && (calculateBuyStopOrders() + calculateSellStopOrders()) < maxLimits) // make sure we have enough money
      {
       // *** DAY TRADING ***
 
