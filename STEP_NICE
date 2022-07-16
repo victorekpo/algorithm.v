@@ -1162,6 +1162,7 @@ void CheckForOpen()
    if(((calculateBuyStopOrders() + calculateSellStopOrders()) > maxLimits && !checkPendingOrders())
       || (AccountInfoDouble(ACCOUNT_MARGIN_LEVEL) < accountMarg
           && ((calculateALLBuyOrders() + calculateALLSellOrders()) != 0))
+      || (calculateBuyOrders() + calculateSellOrders() > 1)
      )
      {
       deletePendingHODL();
@@ -1197,8 +1198,11 @@ void CheckForOpen()
             //   && getMA_15_20() > currentHigh_M15
             //   && isThisBarBEARISH(30)
             //   && isThisBarBEARISH(15)
-            isThisBarBEARISH(5)
-            && isThisBarBEARISH()
+            isThisBarBEARISH()
+            && isThisBarBEARISH(5)
+            && isThisBarBEARISH(15)
+            && isThisBarBEARISH(30)
+            && (getMA_15() < currentPrice || getMA_15() < getMA_15_20())
          )
         )
         {
@@ -1219,6 +1223,7 @@ void CheckForOpen()
               {
                orderPlaced=OrderSend(Symbol(),OP_SELLSTOP,lotSells(),(Ask-(12*Point)),3,0,0,"algorithm.V_SELLSTOP",MILLIONDOLLARBOT,0,Red);
               }
+            //deletePendingScalp();
             continueOrders = true;
             notifyCount = 0;
             return;
@@ -1246,8 +1251,11 @@ void CheckForOpen()
             //  && getMA_15_20() < currentLow_M15
             //    && isThisBarBULLISH(30)
             //    && isThisBarBULLISH(15)
-            isThisBarBULLISH(5)
-            && isThisBarBULLISH()
+            isThisBarBULLISH()
+            && isThisBarBULLISH(5)
+            && isThisBarBULLISH(15)
+            && isThisBarBULLISH(30)
+            && (getMA_15() > currentPrice || getMA_15() > getMA_15_20())
          )
         )
 
@@ -1268,6 +1276,7 @@ void CheckForOpen()
               {
                orderPlaced=OrderSend(Symbol(),OP_BUYSTOP,lotSells(),(Bid+(12*Point)),3,0,0,"algorithm.V_BUYSTOP",MILLIONDOLLARBOT,0,Red);
               }
+            //deletePendingScalp();
             continueOrders = true;
             notifyCount = 0;
             return;
@@ -1327,6 +1336,7 @@ void CheckForClose()
             if(m_position.Comment() == "algorithm.V_SELLSTOP" || m_position.Comment() == "algorithm.V_BUYSTOP")
               {
 
+               //Alert(m_position.Volume());
                if(m_position.Profit() < lowestProf[i])
                   lowestProf[i]=m_position.Profit();
                if(m_position.Profit() > highestProf[i])
@@ -1339,7 +1349,7 @@ void CheckForClose()
 
                // Take Profit Logic
                if(lowestProf[i] < lowestProfit || orderTime[i] > 15)
-                  takeProfit = 0.5;
+                  takeProfit = m_position.Volume() * 2;
 
                if((m_position.Profit() >= takeProfit && m_position.PositionType() == POSITION_TYPE_SELL)
                   || (m_position.Profit() >= takeProfit && m_position.PositionType() == POSITION_TYPE_BUY))
