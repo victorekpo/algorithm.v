@@ -1364,7 +1364,7 @@ void CheckForClose()
 
                // Take Profit Logic
                if(lowestProf[i] < lowestProfit || orderTime[i] > 15)
-                  takeProfit = m_position.Volume() * 2;
+                  takeProfit = MathMin((m_position.Volume() * 2),1);
 
                if((m_position.Profit() >= takeProfit && m_position.PositionType() == POSITION_TYPE_SELL)
                   || (m_position.Profit() >= takeProfit && m_position.PositionType() == POSITION_TYPE_BUY))
