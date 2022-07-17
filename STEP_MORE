@@ -699,7 +699,7 @@ bool checkPendingOrders()
            {
 
             double orderPrice = OrderGetDouble(ORDER_PRICE_OPEN);
-            double gap = 5*Point;
+            double gap = 2*Point;
             if((orderPrice > (currentPrice+gap) && isThisBarBEARISH())
                || (orderPrice < (currentPrice-gap) && isThisBarBULLISH()))
               {
@@ -1208,13 +1208,13 @@ void CheckForOpen()
             //  && getMA_1_50() > currentHigh_M1
             //   percdiff(currentPrice, getMA_5_9()) < 0.2
             //  && percdiff(currentPrice, getMA_5_20()) < 0.7
-            //      getMA_1_20() > currentHigh_M1
+            getMA_1_20() > currentPrice
             // && getMA_5_9() > currentHigh_M5
             //     && getMA_5_20() > currentHigh_M5
             //   && getMA_15_20() > currentHigh_M15
             //   && isThisBarBEARISH(30)
             //   && isThisBarBEARISH(15)
-            isThisBarBEARISH()
+            && isThisBarBEARISH()
             && (isThisBarBEARISH(5)
                 || isThisBarBEARISH(15)
                 || isThisBarBEARISH(30))
@@ -1225,11 +1225,9 @@ void CheckForOpen()
 
          //  SendNotification("taking order now");
          if(
-            percdiff(getMA_5_9(), currentHigh_M5) < 0.7
-            && (iLow(Symbol(),PERIOD_M30,1) < currentPrice
-                || (iLow(Symbol(),PERIOD_M30,1) > currentPrice
-                    && percdiff(currentPrice, iLow(Symbol(),PERIOD_M30,1)) < 1
-                    && percdiff(iLow(Symbol(),PERIOD_M30,0),currentPrice) >= 0.12))
+            percdiff(getMA_5_9(), currentHigh_M5) < 0.4
+            && iLow(Symbol(),PERIOD_M30,1) < currentPrice
+            && percdiff(iLow(Symbol(),PERIOD_M30,0),currentPrice) >= 0.05
             //   getMA_60_20() > currentHigh_H1
             //   || getMA_15_20() > currentHigh_M15
             //   || getMA_5_9() > currentHigh_M5
@@ -1261,13 +1259,13 @@ void CheckForOpen()
             //  && getMA_1_50() < currentLow_M1
             //   percdiff(getMA_5_9(), currentPrice) < 0.2
             //&& percdiff(getMA_5_20(), currentPrice) < 0.7
-            //      getMA_1_20() < currentLow_M1
+            getMA_1_20() < currentPrice
             //  && getMA_5_9() < currentLow_M5
             //    && getMA_5_20() < currentLow_M5
             //  && getMA_15_20() < currentLow_M15
             //    && isThisBarBULLISH(30)
             //    && isThisBarBULLISH(15)
-            isThisBarBULLISH()
+            && isThisBarBULLISH()
             && (isThisBarBULLISH(5)
                 || isThisBarBULLISH(15)
                 || isThisBarBULLISH(30))
@@ -1279,11 +1277,9 @@ void CheckForOpen()
          // Alert("here2");
          //  SendNotification("taking order now");
          if(
-            percdiff(currentLow_M5, getMA_5_9()) < 0.7
-            && (iHigh(Symbol(),PERIOD_M30,1) > currentPrice
-                || (iHigh(Symbol(),PERIOD_M30,1) < currentPrice
-                    && percdiff(iHigh(Symbol(),PERIOD_M30,1), currentPrice) < 1
-                    && percdiff(currentPrice,iHigh(Symbol(),PERIOD_M30,0)) >= 0.12))
+            percdiff(currentLow_M5, getMA_5_9()) < 0.4
+            && iHigh(Symbol(),PERIOD_M30,1) > currentPrice
+            && percdiff(currentPrice,iHigh(Symbol(),PERIOD_M30,0)) >= 0.05
             //    getMA_60_20() < currentLow_H1
             //    || getMA_15_20() < currentLow_M15
             //    || getMA_5_9() < currentLow_M5
