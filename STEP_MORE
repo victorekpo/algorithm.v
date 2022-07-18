@@ -699,11 +699,12 @@ bool checkPendingOrders()
            {
 
             double orderPrice = OrderGetDouble(ORDER_PRICE_OPEN);
-            double gap = 2*Point;
+            double gap = 4*Point;
             if((orderPrice > (currentPrice+gap) && isThisBarBEARISH())
                || (orderPrice < (currentPrice-gap) && isThisBarBULLISH()))
               {
-               m_trade.OrderDelete(ticket);
+               deletePendingScalp();
+               //m_trade.OrderDelete(ticket);
                return false;
               }
 
@@ -1029,6 +1030,7 @@ bool priceGoingUp()
 //+------------------------------------------------------------------+
 void CheckForOpen()
   {
+   CheckForClose();
    continueOrders=true;
    getStepsLastBull(1);
    if(steps <= MAXSteps)
@@ -1128,7 +1130,8 @@ void CheckForOpen()
 // ********************* BEGIN ORDERS LOGIC *********************
 
 //Alert("here ", MAXOrders, " ", MAXSteps);
-
+//Alert(priceLowest_M1);
+//Alert(priceLowest_M1_75);
 // Risk Management
    if(AccountBalance() > 500)
      {
@@ -1185,6 +1188,9 @@ void CheckForOpen()
       deletePendingScalp();
      }
 
+  // Alert(percdiff(currentPrice, priceHighest_M1));
+  // Alert("75 ",percdiff(currentPrice, priceHighest_M1_75));
+
 //  Alert(getMA_60_20(), " ", currentPrice);
 //Alert(percdiff(8635, 8639), " ", getLowestPrice(60,2), " ", currentPrice);
    if((AccountInfoDouble(ACCOUNT_MARGIN_LEVEL) > accountMarg
@@ -1208,26 +1214,31 @@ void CheckForOpen()
             //  && getMA_1_50() > currentHigh_M1
             //   percdiff(currentPrice, getMA_5_9()) < 0.2
             //  && percdiff(currentPrice, getMA_5_20()) < 0.7
-            getMA_1_20() > currentPrice
+           // getMA_1_20() > currentPrice
             // && getMA_5_9() > currentHigh_M5
             //     && getMA_5_20() > currentHigh_M5
             //   && getMA_15_20() > currentHigh_M15
             //   && isThisBarBEARISH(30)
             //   && isThisBarBEARISH(15)
-            && isThisBarBEARISH()
+             isThisBarBEARISH()
+           // && isThisBarBEARISH(5)
             && (isThisBarBEARISH(5)
                 || isThisBarBEARISH(15)
-                || isThisBarBEARISH(30))
-            && (getMA_15() < currentPrice || getMA_15() < getMA_15_20())
+                || isThisBarBEARISH(30)
+               )
+         //   && (getMA_15() < currentPrice || getMA_15() < getMA_15_20())
          )
         )
         {
 
          //  SendNotification("taking order now");
          if(
-            percdiff(getMA_5_9(), currentHigh_M5) < 0.4
-            && iLow(Symbol(),PERIOD_M30,1) < currentPrice
+         //   percdiff(getMA_5_9(), currentHigh_M5) < 0.4
+             iLow(Symbol(),PERIOD_M30,1) < currentPrice
             && percdiff(iLow(Symbol(),PERIOD_M30,0),currentPrice) >= 0.05
+            && percdiff(priceLowest_M1, currentPrice) >= 0.4
+            && percdiff(priceLowest_M1_75, currentPrice) >= 0.2
+            && percdiff(priceLowest_M1_37, currentPrice) >= 0.15
             //   getMA_60_20() > currentHigh_H1
             //   || getMA_15_20() > currentHigh_M15
             //   || getMA_5_9() > currentHigh_M5
@@ -1235,7 +1246,7 @@ void CheckForOpen()
            {
             for(int i = 0; i < maxLoop; i++)
               {
-               orderPlaced=OrderSend(Symbol(),OP_SELLSTOP,lotSells(),(Ask-(9*Point)),3,0,0,"algorithm.V_SELLSTOP",MILLIONDOLLARBOT,0,Red);
+               orderPlaced=OrderSend(Symbol(),OP_SELLSTOP,lotSells(),(Ask-(7*Point)),3,0,0,"algorithm.V_SELLSTOP",MILLIONDOLLARBOT,0,Red);
               }
             //deletePendingScalp();
             continueOrders = true;
@@ -1259,17 +1270,19 @@ void CheckForOpen()
             //  && getMA_1_50() < currentLow_M1
             //   percdiff(getMA_5_9(), currentPrice) < 0.2
             //&& percdiff(getMA_5_20(), currentPrice) < 0.7
-            getMA_1_20() < currentPrice
+           // getMA_1_20() < currentPrice
             //  && getMA_5_9() < currentLow_M5
             //    && getMA_5_20() < currentLow_M5
             //  && getMA_15_20() < currentLow_M15
             //    && isThisBarBULLISH(30)
             //    && isThisBarBULLISH(15)
-            && isThisBarBULLISH()
+            isThisBarBULLISH()
+          //  && isThisBarBULLISH(5)
             && (isThisBarBULLISH(5)
                 || isThisBarBULLISH(15)
-                || isThisBarBULLISH(30))
-            && (getMA_15() > currentPrice || getMA_15() > getMA_15_20())
+                || isThisBarBULLISH(30)
+               )
+          //  && (getMA_15() > currentPrice || getMA_15() > getMA_15_20())
          )
         )
 
@@ -1277,9 +1290,12 @@ void CheckForOpen()
          // Alert("here2");
          //  SendNotification("taking order now");
          if(
-            percdiff(currentLow_M5, getMA_5_9()) < 0.4
-            && iHigh(Symbol(),PERIOD_M30,1) > currentPrice
+           // percdiff(currentLow_M5, getMA_5_9()) < 0.4
+             iHigh(Symbol(),PERIOD_M30,1) > currentPrice
             && percdiff(currentPrice,iHigh(Symbol(),PERIOD_M30,0)) >= 0.05
+            && percdiff(currentPrice, priceHighest_M1) >= 0.4
+            && percdiff(currentPrice, priceHighest_M1_75) >= 0.2
+            && percdiff(currentPrice, priceHighest_M1_37) >= 0.15
             //    getMA_60_20() < currentLow_H1
             //    || getMA_15_20() < currentLow_M15
             //    || getMA_5_9() < currentLow_M5
@@ -1287,7 +1303,7 @@ void CheckForOpen()
            {
             for(int i = 0; i < maxLoop; i++)
               {
-               orderPlaced=OrderSend(Symbol(),OP_BUYSTOP,lotSells(),(Bid+(9*Point)),3,0,0,"algorithm.V_BUYSTOP",MILLIONDOLLARBOT,0,Red);
+               orderPlaced=OrderSend(Symbol(),OP_BUYSTOP,lotSells(),(Bid+(7*Point)),3,0,0,"algorithm.V_BUYSTOP",MILLIONDOLLARBOT,0,Red);
               }
             //deletePendingScalp();
             continueOrders = true;
@@ -1305,7 +1321,7 @@ void CheckForOpen()
 //      Alert("O ",percdiff(iClose(Symbol(),PERIOD_H1,0),iHigh(Symbol(),PERIOD_H1,1)));
 //
 //   Alert("ALL UP ", allMAUp()," ALL DOWN ",allMADown());
-
+   CheckForClose();
   }
 
 // ********************* END ORDERS LOGIC *********************
