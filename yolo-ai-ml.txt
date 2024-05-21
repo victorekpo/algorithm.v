@@ -1,0 +1,13 @@
+YOLO/AI/ML
+https://pjreddie.com/darknet/yolo/
+https://www.section.io/engineering-education/introduction-to-yolo-algorithm-for-object-detection/
+https://appsilon.com/object-detection-yolo-algorithm/
+https://alpha2phi.medium.com/yolo-using-fastapi-websocket-and-react-2b2d28e9f7ed
+https://towardsdatascience.com/in-browser-object-detection-using-yolo-and-tensorflow-js-d2a2b7429f7c
+https://github.com/bennetthardwick/darknet.js/
+https://www.geeksforgeeks.org/yolo-you-only-look-once-real-time-object-detection/
+https://github.com/topics/yolo?l=javascript
+
+ML
+https://mlu-explain.github.io/linear-regression/
+https://aws.amazon.com/blogs/machine-learning/category/compute/aws-lambda/
