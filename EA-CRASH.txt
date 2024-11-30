@@ -1,0 +1,486 @@
+//+------------------------------------------------------------------+
+//|                          Vic & Nana Expert Advisor                |
+//|            Copyright 2024-2025, Vic & Nancy, LLC                  |
+//|                    http://www.github.com/victorekpo               |
+//+------------------------------------------------------------------+
+#property copyright   "2024-2025, Vic & Nancy"
+#property link        "http://www.github.com/victorekpo"
+#property description "Million Dollar BOT for CRASH Index"
+
+//--- Import Libraries
+#include <EA-COMMON.mq5>
+
+//+------------------------------------------------------------------+
+//| OnTick function                                                  |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+
+// Check Levels First
+   CheckLevels();
+// check bar sizes as well
+// Comment("howclose:  L1 ", howClosetoLow, " H1 ", howClosetoHigh, " = ", howClose, "**", " L5 ", howClosetoLow_5, " H5 ", howClosetoHigh_5, " = ", howClose_5, "**", " L15 ", howClosetoLow_15, " H15 ", howClosetoHigh_15, " = ", howClose_15, "**", " L30 ", howClosetoLow_30, " H30 ", howClosetoHigh_30,  " = ", howClose_30, "**"," L240 ", howClosetoLow_240, " H240 ", howClosetoHigh_240,  " = ", howClose_240, "**"," L999 ", howClosetoLow_999, " H999 ",howClosetoHigh_999,  " = ", howClose_999, "**");
+//Comment("recentprofit ", calculateSymbolProfitRecent(), " shouldBEAR: ", shouldAllowFromBEAR, " shouldRSI: ", shouldAllowBuyFromRSI, " shouldRSI_5: ", shouldAllowBuyFromRSI5, " shouldRSI_15: ", shouldAllowBuyFromRSI15, " shouldRSI_30: ", shouldAllowBuyFromRSI30, " shouldRSI_60: ", shouldAllowBuyFromRSI60, " shouldRSI_240: ", shouldAllowBuyFromRSI240, " bar size 15 ", getBarSize(15), " bar size 30 ", getBarSize(30), " bar size 60 ", getBarSize(60), " bar size 4hr ", getBarSize(240), " bar size 999 ", getBarSize(999), " how_close_999_h_l ", howClosetoHigh_999, " / ", howClosetoLow_999, " how_close_240 ", howClosetoHigh_240, " / ", howClosetoLow_240, " how_close_60 ", howClosetoHigh_60, " / ", howClosetoLow_60, " how_close ", howClosetoHigh, " / ", howClosetoLow, " MAXOrders ", MAXOrders, " percClose 999 ",percClose_999, " percClose 240 ",percClose_240, " percClose 60 ",percClose_60, " percClose_30 ", percClose_30,  " percClose_15 ", percClose_15, " percClose_5 ", percClose_5, " percClose ", percClose, " isTrend? ", isBoomTrendingDown);
+//  Comment(rsiVelocity, " ", priceVelocity);
+   Comment("howClose, M1: ",howClose[M1],
+           " M5: ",howClose[M5],
+           " M15: ",howClose[M15],
+           " M30: ",howClose[M30],
+           " H1: ",howClose[H1],
+           " H4: ",howClose[H4],
+           " D: ",howClose[D1],
+           " W: ",howClose[W1],
+           " MN: ",howClose[MN1],
+           " shouldRSI: ", shouldAllowBuyFromRSI[M1],
+           " shouldRSI5: ", shouldAllowBuyFromRSI[M5]
+          );
+
+// close orders in profit
+   double leastMinProfit = 0.5;
+   double aggregateProfit = 3;
+
+   closeInProfit(false,calculateTakeProfit());
+   closeAggregateInProfit(true,calculateTakeProfit() * aggregateProfit,leastMinProfit);
+
+// take orders
+   if(checkAccountEquity(100))
+     {
+      CheckForOpenMAConditions();
+      CheckForOpenRSIConditions();
+      CheckForOpenMARSIConditions();
+      CheckForOpenBuy();
+      CheckForOpenBuyDaily_Bear();
+      CheckForOpenBuyMA_Driven();
+      CheckForOpenBuyMA_Driven2();
+      CheckForOpenBuyRSI_Driven();
+      CheckForOpenBuyRSI_MA_Driven();
+      CheckForOpenBuyRSI_MA_Driven2();
+      CheckForOpenRSIMAStoch();
+     }
+
+   if(checkAccountEquity(300))
+     {
+      CheckForOpenSell();
+      CheckForOpenSell2();
+      CheckForOpenSell3();
+      CheckForOpenSell4();
+      CheckForOpenSell5();
+      CheckForOpenSell_ExtremeRSI();
+     }
+
+
+//Alert("MA 1,9: ",getMA(M1,_9));
+// Alert("RSI: ", getRSI(M1));
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenMAConditions()
+  {
+   if(
+      baseConditionsForBuyOrder()
+      && MAConditionsForBuyOrder()
+      && shouldAllowBuyFromRSI[M1]
+      && isThisBarBULLISH()
+      && getRSI(M1) < 55
+      && getMA(M1, _50) < getLowestPrice(1, 1)
+      && getMA(M5, _20) < getLowestPrice(5, 1)
+   )
+     {
+      placeBuyOrder(orderLots, "BuyMA", 100);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenRSIConditions()
+  {
+   if(
+      baseConditionsForBuyOrder()
+      && RSIConditionsForBuyOrder()
+      && !(getMA(M1, _50) > getHighestPrice(1, 1) && getMA(M1, _200) > getHighestPrice(1, 1))
+      && !(getMA(M30, _50) > getHighestPrice(1, 1))
+      && isThisBarBULLISH()
+      && ((isThisBarBULLISH(5) && isThisBarBULLISH(15))
+          || getMA(M30, _50) < getLowestPrice(30, 1))
+   )
+     {
+      placeBuyOrder(orderLots, "BuyRSI", 200);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenMARSIConditions()
+  {
+   if(
+      baseConditionsForBuyOrder()
+      && MAConditionsForBuyOrder()
+      && RSIConditionsForBuyOrder()
+      && isThisBarBULLISH()
+   )
+     {
+      placeBuyOrder(orderLots, "BuyMARSI", 300);
+     }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenBuy()
+  {
+   if(
+      baseConditionsForBuyOrder()
+      && isThisBarBULLISH()
+      && (isThisBarBULLISH(999) || isThisBarBULLISH(240))
+      && MAConditionsForBuyOrder()
+      && RSIConditionsForBuyOrder()
+   )
+     {
+      placeBuyOrder(orderLots, "Buy", MILLIONDOLLARBOT);
+     }
+  }
+
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenBuyDaily_Bear()
+  {
+   if(
+      baseConditionsForBuyOrder()
+      && isThisBarBULLISH()
+      && isThisBarBULLISH(240) && getBarSize(240) > 5
+      && isThisBarBULLISH(999) && getBarSize(999) > 200
+      && MAConditionsForBuyOrder()
+      && RSIConditionsForBuyOrder()
+   )
+     {
+      placeBuyOrder(orderLots, "BuyDB", MILLIONDOLLARBOT);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenBuyMA_Driven()
+  {
+   if(
+      (currentPrice - getMA(M1, _50) > 2 || currentPrice > getMA(M1, _200) || (isThisBarBULLISH(240) && isThisBarBULLISH(60) && isThisBarBULLISH(30) && isThisBarBULLISH(15) && currentPrice > getMA(M5, _20) && currentPrice > getMA(M1, _20) && currentPrice > getMA(M1, _9)))
+      && isThisBarBULLISH()
+      && isThisBarBULLISH(5)
+      && isThisBarBULLISH(15)
+      && getBarSize(15) > 3
+      && getRSI(M1) < 60
+      && getMA(M1, _200) < getLowestPrice(1,1)
+      && getMA(M5, _200) < getLowestPrice(5,1)
+      && getMA(M15, _200) < getLowestPrice(15,1)
+      && getMA(M1, _20) - getMA(M1, _9) < -1
+      && (getMA(M15, _20) - getMA(M15, _50) < -3 || getMA(M5, _20) - getMA(M5, _9) < -3)
+      && (getMA(M1, _50) < getLowestPrice(1,1) || getMA(M1, _200) < getLowestPrice(1,1))
+      && getMA(M1, _20) > getMA(M1, _50)
+      && getMA(M1, _20) < getLowestPrice(1,1)
+      && (shouldAllowFromBULL || currentPrice < getMA(M1, _50) || currentPrice < getMA(M1, _200) || (isThisBarBULLISH(240) && isThisBarBULLISH(60) && isThisBarBULLISH(30) && isThisBarBULLISH(15) && currentPrice > getMA(M5, _20) && currentPrice > getMA(M1, _20) && currentPrice > getMA(M1, _9)))
+      && howClose[M1] < 0.5
+      && howClose[M5] < 2
+   )
+     {
+      placeBuyOrder(orderLots, "BuyMD", MILLIONDOLLARBOT);
+     }
+  }
+
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenBuyMA_Driven2()
+  {
+   if(
+      currentPrice > getMA(M1, _50)
+// && (currentPrice > getMA(M1, _9) || checkAccountEquity(1000))
+      && currentPrice > getMA(M1, _200)
+      && currentPrice > getMA(M5, _20)
+      && currentPrice > getMA(M5, _9)
+      && currentPrice > getMA(M5, _200)
+      && currentPrice > getMA(M15, _50)
+      && currentPrice > getMA(M15, _20)
+      && currentPrice > getMA(M15, _50)
+      && currentPrice > getMA(M15, _200)
+      && currentPrice > getMA(M30, _9)
+      && currentPrice > getMA(M30, _20)
+      && currentPrice > getMA(M30, _50)
+      && getMA(M1, _20) > getMA(M1, _50)
+      && (getRSI(M1) < 50 || getRSI(M5) < 50)
+      && steps < 350
+      && howClose[M5] < 2
+      && isThisBarBULLISH()
+      && isThisBarBULLISH(5)
+      && (currentPrice > getMA(M5, _200) || getMA(M15, _50) < getMA(M15, _20) || getMA(M1, _50) < getMA(M1, _20))
+      && getMA(M1, _20) - getMA(M1, _9) < -1
+      && getMA(M15, _20) - getMA(M15, _50) < -3
+   )
+     {
+      placeBuyOrder(orderLots, "BuyMD2", MILLIONDOLLARBOT);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenBuyRSI_Driven()
+  {
+   if(
+      baseConditionsForBuyOrder()
+      && isThisBarBULLISH()
+      && (getRSI(M1) < 60 || getRSI(M15) < 40)
+      && (getRSI(M1) < 55 || checkAccountEquity(1000))
+      && getRSI(M5) < 65
+      && (getRSI(M5) < 55 || checkAccountEquity(1000))
+      && getRSI(M15) < 65
+      && (getRSI(M15) < 55 || checkAccountEquity(1000))
+      && getRSI(M30) < 65
+      && (getRSI(M30) < 55 || checkAccountEquity(1000))
+      && getRSI(H1) < 65
+      && (getRSI(H1) < 55 || checkAccountEquity(1000))
+      && getRSI(H4) < 65
+      && (isThisBarBULLISH(H1) || isThisBarBULLISH(M30))
+      && (isThisBarBULLISH(D1) || isThisBarBULLISH(M30))
+      && (isThisBarBULLISH(W1) || isThisBarBULLISH(M30))
+      && getMA(M5, _9) < getLowestPrice(5,1)
+      && getMA(M5, _9) < getLowestPrice(5,1)
+      && MAConditionsForBuyOrder()
+      && shouldAllowBuyFromRSI[M1]
+   )
+     {
+      placeBuyOrder(orderLots, "BuyRD", MILLIONDOLLARBOT);
+     }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenBuyRSI_MA_Driven()
+  {
+   if(
+      isThisBarBULLISH()
+      && isThisBarBULLISH(M5)
+      && isThisBarBULLISH(M15)
+      && howClose[D1] > -7
+      && (getRSI(M1) < 70 || getRSI(M15) < 40)
+      && (getRSI(M1) < 67 || getRSI(M5) < 65)
+      && (getRSI(M1) < 55 || checkAccountEquity(1000))
+      && (getRSI(M5) < 55 || checkAccountEquity(1000))
+      && (getRSI(M15) < 55 || checkAccountEquity(1000))
+      && getRSI(W1) < 60
+      && (isThisBarBULLISH(H1) || isThisBarBULLISH(M30))
+      && (isThisBarBULLISH(D1) || isThisBarBULLISH(H1))
+      && (isThisBarBULLISH(W1) || isThisBarBULLISH(M30))
+      && getMA(M5, _9) < getLowestPrice(5,1)
+      && getMA(M5, _9) < getLowestPrice(5,1)
+//   && (getMA(M1, _9) < getLowestPrice(1,1) || checkAccountEquity(1000))
+      && getMA(M1, _20) < getLowestPrice(1,1)
+//&& (shouldAllowBuyFromRSI || getMA(M30, _20) < getLowestPrice(30,1))
+//&& (shouldAllowBuyFromRSI5 || getMA(M30, _50) < getLowestPrice(30,1))
+      && MAConditionsForBuyOrder()
+      && getRSI(M1) < 55
+   )
+     {
+      placeBuyOrder(orderLots, "BuyRMD", MILLIONDOLLARBOT);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenBuyRSI_MA_Driven2()
+  {
+   if(
+      baseConditionsForBuyOrder()
+      && isThisBarBULLISH()
+      && isThisBarBULLISH(M15)
+      && (getRSI(M1) < 70 || getRSI(M15) < 50)
+      && (getRSI(M1) < 67 || getRSI(M5) < 55)
+      && (getRSI(M1) < 55 || checkAccountEquity(1000))
+      && getRSI(M5) < 55
+      && (getRSI(M5) < 55 || checkAccountEquity(1000))
+      && (getRSI(M15) < 50 || checkAccountEquity(1000))
+      && (getRSI(M30) < 50 || checkAccountEquity(1000))
+      && (getRSI(H1) < 50 || checkAccountEquity(1000))
+      && getRSI(W1) < 60
+      && (isThisBarBULLISH(H1) || isThisBarBULLISH(M30))
+      && (isThisBarBULLISH(D1) || isThisBarBULLISH(H1))
+      && (isThisBarBULLISH(W1) || isThisBarBULLISH(M30))
+      && (getMA(M5, _9) < getLowestPrice(5,1) || getMA(M5, _200) < getLowestPrice(5,1) || getMA(M15, _50) < getLowestPrice(15,1) || getMA(M1, _50) < getLowestPrice(1,1))
+// && (getMA(M1, _9) < getLowestPrice(1,1) || checkAccountEquity(1000))
+      && (getMA(M5, _20) < getLowestPrice(5,1) || checkAccountEquity(1000))
+      && (getMA(M15, _50) < getLowestPrice(15,1) || checkAccountEquity(1000))
+      && (getMA(M15, _20) < getLowestPrice(15,1) || checkAccountEquity(1000))
+      && MAConditionsForBuyOrder()
+      && !(getMA(M1, _50) > getLowestPrice(1, 1) || getMA(M1, _20) > getLowestPrice(1, 1) || getMA(M1, _9) > getLowestPrice(1,1))
+   )
+     {
+      placeBuyOrder(orderLots, "BuyRMD2", MILLIONDOLLARBOT);
+     }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenRSIMAStoch()
+  {
+   if(
+      isThisBarBULLISH()
+      && isThisBarBULLISH(60)
+      && getBarSize(60) > 5
+      && isThisBarBULLISH(240)
+      && getBarSize(240) > 5
+      && isThisBarBULLISH(999)
+      && getBarSize(999) > 20
+      && shouldAllowBuyFromRSI[M1]
+      && getMA(H4, _20) < getLowestPrice(H4,1)
+      && getMA(H4, _50) < getLowestPrice(H4,1)
+      && getMA(H1, _200) < getLowestPrice(H1,1)
+      && getMA(M30, _200) < getLowestPrice(30,1)
+      && getMA(M15, _50) < getLowestPrice(15,1)
+      && (getMA(M15, _20) < getLowestPrice(15,1) || getMA(M15, _9) < getLowestPrice(15,1))
+      && getStochasticMain(15) < 80
+      && getStochasticMain(30) < 80
+   )
+     {
+      placeBuyOrder(orderLots, "BuyRMS", MILLIONDOLLARBOT);
+     }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenSell()
+  {
+   if(
+      isThisBarBEARISH(H4)
+      && isThisBarBEARISH(H1)
+      && isThisBarBEARISH(M30)
+      && (howClose[H4] < -7 || isThisBarBEARISH(W1))
+      && ((getRSI(M1) > 80 || getRSI(M5) > 70 || getRSI(M15) > 70 || getRSI(M30) > 70 || getRSI(H1) > 70 || getRSI(H4) > 70 || getRSI(W1) > 70)
+          || (isThisBarBEARISH(M15) && isThisBarBEARISH(M30) && isThisBarBEARISH(H1) && getRSI(M1) > 65)
+         )
+      && (getRSI(M1) > 40 && getRSI(M5) > 40 && getRSI(M15) > 40 && getRSI(M30) > 40 && getRSI(H1) > 40 && getRSI(H4) > 40 && getRSI(W1) > 40)
+      && getMA(M5, _9) > getHighestPrice(5, 1)
+      && getMA(M5, _20) > getHighestPrice(5, 1)
+      && getMA(M5, _200) > getHighestPrice(5, 1)
+      && (getMA(M1, _200) > getHighestPrice(1, 1) || getMA(M5, _50) > getHighestPrice(5, 1))
+      && (getMA(M1, _50) > getHighestPrice(1, 1) || getMA(M1, _200) > getHighestPrice(1, 1))
+      && ((getMA(M1, _9) > getHighestPrice(1, 1) && getMA(M1, _20) > getHighestPrice(1, 1))
+          || (isThisBarBEARISH(5) || isThisBarBEARISH(15) || isThisBarBEARISH(30) || isThisBarBEARISH(60) || checkAccountEquity(5000)))
+//   && getRSI(M1) > 65
+   )
+     {
+      placeSellOrder(orderLots, "Sell", MILLIONDOLLARBOT);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenSell2()
+  {
+   if(
+      ((isThisBarBEARISH(H4) && getBarSize(H4) > 20) || (isThisBarBEARISH(W1) && getBarSize(W1) > 20))
+      && (getRSI(M1) > 80 || getRSI(M5) > 80 || getRSI(M15) > 80 || getRSI(M30) > 80 || getRSI(H1) > 80 || getRSI(H4) > 80 || getRSI(W1) > 80)
+      && (getMA(H1, _20) > getHighestPrice(H1, 1) || checkAccountEquity(1000))
+      && (getMA(H1, _50) > getHighestPrice(H1, 1) || checkAccountEquity(1000))
+      && (getMA(M5, _9) > getHighestPrice(H1, 1) || getMA(M1, _50) > getHighestPrice(1, 1))
+      && (getMA(M5, _20) > getHighestPrice(H1, 1) || getMA(M1, _50) > getHighestPrice(1, 1))
+   )
+     {
+      placeSellOrder(orderLots, "Sell2", MILLIONDOLLARBOT);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenSell3()
+  {
+   if(
+      ((isThisBarBEARISH(H4) && getBarSize(H4) > 20) || (isThisBarBEARISH(W1) && getBarSize(W1) > 20))
+      && (getRSI(M1) > 95 || getRSI(M5) > 90 || getRSI(M15) > 90 || getRSI(M30) > 90 || getRSI(H1) > 90 || getRSI(H4) > 90 || getRSI(W1) > 90)
+      && (getMA(M5, _9) > getHighestPrice(H1, 1) || getMA(M1, _50) > getHighestPrice(1, 1))
+      && (getMA(M5, _20) > getHighestPrice(H1, 1) || getMA(M1, _50) > getHighestPrice(1, 1))
+   )
+     {
+      placeSellOrder(orderLots, "Sell3", MILLIONDOLLARBOT);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenSell4()
+  {
+   if(
+      ((isThisBarBEARISH(H4) && getBarSize(H4) > 20) || (isThisBarBEARISH(W1) && getBarSize(W1) > 20))
+      && getMA(H4, _20) < getLowestPrice(H4, 1)
+      && getRSI(M1) >= 70
+      && (getRSI(M5) >= 60 || getRSI(M15) >= 60)
+      && (getRSI(D1) > 50 || checkAccountEquity(1000))
+      && (getMA(M1, _20) > getHighestPrice(1, 1) || getMA(M1, _200) > getHighestPrice(1, 1))
+      && ((getMA(M1, _9) > getHighestPrice(1, 1) && getMA(M1, _20) > getHighestPrice(1, 1))
+          || (isThisBarBEARISH(5) || isThisBarBEARISH(15) || isThisBarBEARISH(30) || isThisBarBEARISH(60) || checkAccountEquity(5000)))
+   )
+     {
+      placeSellOrder(orderLots, "Sell4", MILLIONDOLLARBOT);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenSell5()
+  {
+   if(
+      getRSI(M1) > 70
+      && (getRSI(M5) > 68 || getRSI(M15) > 68 || (checkAccountEquity(1000) && getRSI(M5) > 55))
+      && (getMA(M1, _20) > getHighestPrice(1,1) || getMA(M5, _20) > getHighestPrice(5,1) || getMA(M15, _20) > getHighestPrice(15,1) || getMA(M30, _20) > getHighestPrice(30,1) || getMA(H1, _20) > getHighestPrice(H1,1) || getMA(H4, _20) > getHighestPrice(H4,1))
+      && (getRSI(H1) > 50 || checkAccountEquity(1000))
+      && getRSI(H1) > 55
+      && (getMA(M1, _500) > getHighestPrice(1,1) || checkAccountEquity(1000))
+      && getStochasticSignal(M5) > getStochasticMain(M5)
+   )
+     {
+      placeSellOrder(orderLots, "Sell5", MILLIONDOLLARBOT);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CheckForOpenSell_ExtremeRSI()
+  {
+   if(
+      shouldPrepareForBuyReverse[M1]
+      && (getMA(M1, _9) > getHighestPrice(1, 1)
+          || getMA(M1, _20) > getHighestPrice(1, 1)
+          || getMA(M1, _50) > getHighestPrice(1, 1))
+   )
+     {
+      placeSellOrder(orderLots, "SellXR", MILLIONDOLLARBOT);
+     }
+  }
+//+------------------------------------------------------------------+
