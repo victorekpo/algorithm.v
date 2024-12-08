@@ -22,6 +22,8 @@ CPositionInfo position;
 //--- Constants
 #define MILLIONDOLLARBOT 20250101
 
+int equityThreshold = 50;
+
 // Structs
 struct HistoryEntry
   {
@@ -84,7 +86,7 @@ double maxOrders;
 // Define lot size thresholds
 double lotThresholds[][2] =
   {
-     {300, 0.1},   // Equity >= 300 -> 0.1 lot
+     {250, 0.1},   // Equity >= 300 -> 0.1 lot
      {500, 0.2},   // Equity >= 500 -> 0.2 lot
      {1000, 0.5},  // Equity >= 1000 -> 0.5 lot
      {2000, 0.8},  // Equity >= 2000 -> 0.8 lot
@@ -95,7 +97,7 @@ double lotThresholds[][2] =
 // Define max orders thresholds
 double orderThresholds[][2] =
   {
-     {300, 1},    // Equity >= 300 -> 1 order
+     {250, 1},    // Equity >= 300 -> 1 order
      {500, 2},    // Equity >= 500 -> 2 orders
      {1000, 3},   // Equity >= 1000 -> 3 orders
      {2000, 4},   // Equity >= 2000 -> 4 orders
@@ -105,7 +107,7 @@ double orderThresholds[][2] =
 // Define take profit thresholds
 double takeProfitThresholds[][2] =
   {
-     {300, 0.3},    // Equity >= 300 -> $0.3 profit
+     {250, 0.35},    // Equity >= 300 -> $0.3 profit
      {500, 0.5},    // Equity >= 500 -> $0.5 profit
      {1000, 1},   // Equity >= 1000 -> $1 profit
      {2000, 2},   // Equity >= 2000 -> $2 profit
@@ -156,6 +158,7 @@ double highestrsi;
 double lowestrsi;
 double highestprice;
 double lowestprice;
+double priceOccurence;
 
 bool shouldReverseBuy = false;
 bool shouldReverseSell = false;
@@ -172,6 +175,8 @@ bool shouldAllowBuyFromRSI[6] = {true, true, true, true, true, true};
 bool shouldAllowSellFromRSI[6] = {true, true, true, true, true, true};
 bool shouldPrepareForBuyReverse[6] = {false, false, false, false, false, false};
 bool shouldPrepareForSellReverse[6] = {false, false, false, false, false, false};
+bool shouldPrepareForBuyReverse2[6] = {false, false, false, false, false, false};
+bool shouldPrepareForSellReverse2[6] = {false, false, false, false, false, false};
 bool shouldAllowFromBEAR = true;
 bool shouldAllowFromBULL = true;
 bool rsiBelowThreshold[8] = {false};
@@ -365,6 +370,7 @@ void CheckLevels()
    maxOrders = calculateMaxOrders();
 
    currentPrice = iClose(Symbol(), PERIOD_M1, 0);
+   priceOccurence = percdiff_signed(checkOccurenceBuy(), checkOccurenceSell());
    rsiVelocity = NormalizeDouble(calcCurrentVelocity(rsi1History, 500),4);
    priceVelocity = NormalizeDouble(calcCurrentVelocity(priceHistory, 500),4);
    bool isBoom = startsWith(_Symbol, "BOOM");
@@ -415,6 +421,10 @@ void CheckLevels()
    int rsiSell1000ReverseThresholds[6] = {25, 33,  33, 35, 35, 35};
    int rsiBuyReverseThresholds[6] = {70, 65, 65, 65, 65, 65};
    int rsiBuy1000ReverseThresholds[6] = {75, 67, 67, 65, 65, 65};
+   int rsiSellReverseThresholds2[6] = {8, 20, 25, 25, 25, 25};
+   int rsiSell1000ReverseThresholds2[6] = {3, 15,  20, 20, 20, 20};
+   int rsiBuyReverseThresholds2[6] = {95, 85, 80, 80, 80, 80};
+   int rsiBuy1000ReverseThresholds2[6] = {98, 88, 83, 83, 83, 83};
 
    for(int i = 0; i < ArraySize(rsiValues); i++)
      {
@@ -442,8 +452,17 @@ void CheckLevels()
 
       // Should Reverse
       // resets
-      shouldPrepareForSellReverse[i] = false;
-      shouldPrepareForBuyReverse[i] = false;
+      if(rsiValues[i] >= 50 || getMA(M1, _20) > getHighestPrice(1,1) || getMA(M1, _50) > getHighestPrice(1,1))
+        {
+         shouldPrepareForSellReverse[i] = false;
+         shouldPrepareForSellReverse2[i] = false;
+        }
+
+      if(rsiValues[i] <= 50 || getMA(M1, _20) < getLowestPrice(1,1) || getMA(M1, _50) < getLowestPrice(1,1))
+        {
+         shouldPrepareForBuyReverse[i] = false;
+         shouldPrepareForBuyReverse2[i] = false;
+        }
 
       if(rsiValues[i] <= rsiSellReverseThresholds[i] && _Symbol != "Boom 1000 Index")
         {
@@ -467,6 +486,28 @@ void CheckLevels()
          // Alert("should reverse buy 1000 threshold reached!", rsiValues[i], " ", rsiBuy1000ReverseThresholds[i]);
         }
 
+      // 2
+      if(rsiValues[i] <= rsiSellReverseThresholds2[i] && _Symbol != "Boom 1000 Index")
+        {
+         shouldPrepareForSellReverse2[i] = true;
+         // Alert("should reverse sell threshold reached!", rsiValues[i], " ", rsiSellReverseThresholds[i]);
+        }
+      if(rsiValues[i] <= rsiSell1000ReverseThresholds2[i] && _Symbol == "Boom 1000 Index")
+        {
+         shouldPrepareForSellReverse2[i] = true;
+         // Alert("should reverse sell 1000 threshold reached!", rsiValues[i], " ", rsiSell1000ReverseThresholds[i]);
+        }
+
+      if(rsiValues[i] >= rsiBuyReverseThresholds2[i] && _Symbol != "Crash 1000 Index")
+        {
+         shouldPrepareForBuyReverse2[i] = true;
+         // Alert("should reverse buy threshold reached! ", rsiValues[i], " ", rsiBuyReverseThresholds[i]);
+        }
+      if(rsiValues[i] >= rsiBuy1000ReverseThresholds2[i] && _Symbol == "Crash 1000 Index")
+        {
+         shouldPrepareForBuyReverse2[i] = true;
+         // Alert("should reverse buy 1000 threshold reached!", rsiValues[i], " ", rsiBuy1000ReverseThresholds[i]);
+        }
 
      }
 
@@ -491,7 +532,7 @@ void CheckLevels()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int placeBuyOrder(double lotSize, string comment, int magic, int gapAmt = 1)
+int placeBuyOrder(double lotSize, string comment, int magic, int gapAmt = 1, bool checkVeryCritical = false)
   {
    int orderPlaced = -1;
    double price = Ask;
@@ -501,12 +542,48 @@ int placeBuyOrder(double lotSize, string comment, int magic, int gapAmt = 1)
 // && isThrottledPrice(price, lastPriceBuyOrder, gapAmt, comment)
    )
      {
-      if(criticalConditionsForBuyOrder())
+      if((criticalConditionsForBuyOrder() || checkVeryCritical) && veryCriticalConditionsForBuyOrder())
         {
+         // Check risky order
+         if(priceOccurence < -75)
+           {
+            ShowAlertWithDelay("risky buy order!!!" + priceOccurence + " " + checkOccurenceBuy());
+            if(
+               checkOccurenceBuy() < 5000
+               && getRSI(M1) > 35
+               && getRSI(M5) > 38
+               && getRSI(M15) > 38
+               && getRSI(M30) > 38
+               && (
+                  getMA(M1, _500) > getLowestPrice(1, 1)
+                  || getMA(M5, _500) > getLowestPrice(5, 1)
+                  || getMA(M15, _500) > getLowestPrice(15, 1)
+                  || getMA(H4, _9) > getLowestPrice(240, 1)
+                  || getRSI(M1) > 55
+               )
+            )
+              {
+               ShowAlertWithDelay("Avoiding risky buy order due to conditions " + _Symbol);
+               return -1;
+              }
+           }
+
+         // Take order
          orderPlaced = OrderSend(_Symbol, OP_BUY, lotSize, Ask, 3, 0, 0, "NEW_algorithm.V_" + comment, magic, 0, Blue);
          lastPriceBuyOrder = price;
         }
      }
+
+// Resets
+   double rsiValues[6] = {getRSI(M1), getRSI(M5), getRSI(M15), getRSI(M30), getRSI(H1), getRSI(H4)};
+   for(int i = 0; i < ArraySize(rsiValues); i++)
+     {
+      shouldPrepareForSellReverse[i] = false;
+      shouldPrepareForBuyReverse[i] = false;
+      shouldPrepareForSellReverse2[i] = false;
+      shouldPrepareForBuyReverse2[i] = false;
+     }
+
    return orderPlaced;
   }
 
@@ -562,7 +639,7 @@ int placeBuyLimitOrder(double lotSize, string comment, int magic, int gapAmt = 1
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int placeSellOrder(double lotSize, string comment, int magic, int gapAmt = 1)
+int placeSellOrder(double lotSize, string comment, int magic, int gapAmt = 1, bool checkVeryCritical = false)
   {
    int orderPlaced = -1;
    double price = Bid;
@@ -572,12 +649,48 @@ int placeSellOrder(double lotSize, string comment, int magic, int gapAmt = 1)
 //   && isThrottledPrice(price, lastPriceSellOrder, gapAmt, comment)
    )
      {
-      if(criticalConditionsForSellOrder())
+      if((criticalConditionsForSellOrder() || checkVeryCritical) && veryCriticalConditionsForSellOrder())
         {
+         // Check risky order
+         if(priceOccurence > 75)
+           {
+            ShowAlertWithDelay("risky sell order!!! " + priceOccurence + " " + checkOccurenceBuy());
+            if(
+               checkOccurenceSell() < 5000
+               && getRSI(M1) < 65
+               && getRSI(M5) < 62
+               && getRSI(M15) < 62
+               && getRSI(M30) < 62
+               && (
+                  getMA(M1, _500) < getHighestPrice(1, 1)
+                  || getMA(M5, _500) < getHighestPrice(5, 1)
+                  || getMA(M15, _500) < getHighestPrice(15, 1)
+                  || getMA(H4, _9) < getHighestPrice(240, 1)
+                  || getRSI(M1) < 45
+               )
+            )
+              {
+               ShowAlertWithDelay("Avoiding risky sell order due to conditions " + _Symbol);
+               return -1;
+              }
+           }
+
+         // Take order
          orderPlaced = OrderSend(_Symbol, OP_SELL, lotSize, Bid, 3, 0, 0, "NEW_algorithm.V_" + comment, magic, 0, Red);
          lastPriceSellOrder = price;
         }
      }
+
+// Resets
+   double rsiValues[6] = {getRSI(M1), getRSI(M5), getRSI(M15), getRSI(M30), getRSI(H1), getRSI(H4)};
+   for(int i = 0; i < ArraySize(rsiValues); i++)
+     {
+      shouldPrepareForSellReverse[i] = false;
+      shouldPrepareForBuyReverse[i] = false;
+      shouldPrepareForSellReverse2[i] = false;
+      shouldPrepareForBuyReverse2[i] = false;
+     }
+
    return orderPlaced;
   }
 
@@ -851,7 +964,7 @@ int getStepsLastBar(int time, int period = 0, bool bull = true, int max = 3000)
    for(int count = 0; count <= max; count++, period++)
      {
       bool bar = bull ? isThisBarBULLISH(time, period) : isThisBarBEARISH(time, period);
-      if(bar && getBarSize(time, period) > 20)
+      if(bar && getBarSize(time, period) > 0)
         {
          return count;
         }
@@ -1321,7 +1434,7 @@ double getSlope()
 //+------------------------------------------------------------------+
 //| Check Sell Occurrence                                             |
 //+------------------------------------------------------------------+
-int checkOccurenceSell(int time = 1, int periods = 1000)
+int checkOccurenceSell(int time = 1, int periods = 43200) // month
   {
    int calc = 0;
 
@@ -1343,7 +1456,7 @@ int checkOccurenceSell(int time = 1, int periods = 1000)
 //+------------------------------------------------------------------+
 //| Check Buy Occurrence                                              |
 //+------------------------------------------------------------------+
-int checkOccurenceBuy(int time = 1, int periods = 1000)
+int checkOccurenceBuy(int time = 1, int periods = 43200) // month
   {
    int calc = 0;
 
@@ -1769,8 +1882,32 @@ double calculateLots()
    int rowSize = 6;
    double lots = getEquityBasedValue(lotThresholds, equity, rowSize);
 
+// Boom 600 starts at 0.2 volume
+   if(_Symbol == "Boom 600 Index")
+     {
+      lots = MathMax(lots, 0.2);
+     }
+
+// Boom 900 starts at 0.2 volume
+   if(_Symbol == "Boom 900 Index")
+     {
+      lots = MathMax(lots, 0.2);
+     }
+
 // Boom 1000 starts at 0.2 volume
    if(_Symbol == "Boom 1000 Index")
+     {
+      lots = MathMax(lots, 0.2);
+     }
+
+// Crash 600 starts at 0.2 volume
+   if(_Symbol == "Crash 600 Index")
+     {
+      lots = MathMax(lots, 0.2);
+     }
+
+// Crash 900 starts at 0.2 volume
+   if(_Symbol == "Crash 900 Index")
      {
       lots = MathMax(lots, 0.2);
      }
@@ -1820,9 +1957,44 @@ double calculateLots()
       lots = MathMax(lots * 5000, 500);
      }
 
+   if(_Symbol == "UNIUSD")
+     {
+      lots = MathMax(lots * 10, 1);
+     }
+
+   if(_Symbol == "XTZUSD")
+     {
+      lots = MathMax(lots * 100, 10);
+     }
+
    if(_Symbol == "SOLUSD")
      {
-      lots = MathMax(lots, 0.5);
+      lots = MathMax(lots * 5, 0.5);
+     }
+
+   if(_Symbol == "LNKUSD")
+     {
+      lots = MathMax(lots * 10, 1);
+     }
+
+   if(_Symbol == "DOTUSD")
+     {
+      lots = MathMax(lots * 10, 1);
+     }
+
+   if(_Symbol == "FILUSD")
+     {
+      lots = MathMax(lots * 10, 1);
+     }
+
+   if(_Symbol == "ADAUSD")
+     {
+      lots = MathMax(lots * 1000, 100);
+     }
+
+   if(_Symbol == "BCHUSD")
+     {
+      lots = MathMax(lots * 10, 1);
      }
 
    if(_Symbol == "ALGUSD")
@@ -1840,9 +2012,19 @@ double calculateLots()
       lots = MathMax(lots * 5000, 500);
      }
 
+   if(_Symbol == "IOTUSD")
+     {
+      lots = MathMax(lots * 5000, 500);
+     }
+
+   if(_Symbol == "BATUSD")
+     {
+      lots = MathMax(lots * 5000, 500);
+     }
+
    if(_Symbol == "TRXUSD")
      {
-      lots = MathMax(lots * 20000, 2000);
+      lots = MathMax(lots * 5000, 2000);
      }
 
    if(_Symbol == "XMRUSD")
@@ -1850,6 +2032,25 @@ double calculateLots()
       lots = MathMax(lots * 10, 0.1);
      }
 
+   if(_Symbol == "XCUUSD")
+     {
+      lots = MathMax(lots * 0.01, 0.01);
+     }
+
+   if(_Symbol == "XALUSD")
+     {
+      lots = MathMax(lots * 0.01, 0.01);
+     }
+
+   if(_Symbol == "DSHUSD")
+     {
+      lots = MathMax(lots * 5, 0.5);
+     }
+
+   if(_Symbol == "LTCUSD")
+     {
+      lots = MathMax(lots * 5, 0.5);
+     }
 
    return lots;
   }
@@ -2300,13 +2501,17 @@ bool ShouldCloseOrderEarly(long ticket)
    datetime currentTime = TimeCurrent();
 
    bool closeByProfit = entry.GetValue() < profitThreshold && m_position.Profit() >= PROFIT_THRESHOLD;
-   bool closeByTime = currentTime > timeAlarm;
+   bool closeByTime = currentTime > timeAlarm && m_position.Profit() >= PROFIT_THRESHOLD;
+   bool rsiTooLowForSell = getRSI(M1) > 70 && m_position.PositionType() == 0 && m_position.Profit() > 0;
+   bool rsiTooHighForBuy = getRSI(M1) < 30 && m_position.PositionType() == 1 && m_position.Profit() > 0;
 
    return (
              closeByProfit
              || closeByTime
 //   || IsCloseToCriticalLevel()
              || HasTrendChanged(m_position.PositionType())
+             || rsiTooLowForSell
+             || rsiTooHighForBuy
           );
   }
 
@@ -2318,7 +2523,7 @@ void CheckForEarlyClose()
   {
    for(int i = PositionsTotal() - 1; i >= 0; i--)
      {
-      if(!m_position.SelectByIndex(i) || isHODLOrder(m_position.Comment()))
+      if(!m_position.SelectByIndex(i) || m_position.Symbol() != _Symbol || isHODLOrder(m_position.Comment()))
          continue;
 
       ulong ticket = m_position.Ticket();
@@ -2328,9 +2533,10 @@ void CheckForEarlyClose()
       TrackLowestProfit(ticket, currentProfit);
 
       // Close the order if the conditions are met
-      if(ShouldCloseOrderEarly(ticket) && m_trade.PositionClose(ticket))
+      if(ShouldCloseOrderEarly(ticket) && currentProfit > 0)
         {
          Alert("Closing position ", ticket, " at profit: ", currentProfit);
+         m_trade.PositionClose(ticket);
 
          // Clean up the entry from the HashMap
          LowestProfit *entry = NULL;
@@ -2419,22 +2625,27 @@ void HandleReversals()
         {
          double currentProfit = m_position.Profit();
          ENUM_POSITION_TYPE posType = m_position.PositionType();
-
          // Handle reversal logic only if the position is in loss
-         if(currentProfit < -(3 * m_position.Volume()))
+         if(currentProfit < - 50)//(10 * m_position.Volume()))
            {
-            if(posType == POSITION_TYPE_SELL
-               && isBullishTrend()
-               && shouldTakeMoreReversalBuy)
+            if(
+               posType == POSITION_TYPE_SELL
+               //  && isBullishTrend()
+               // && shouldTakeMoreReversalBuy
+            )
               {
+               //Alert("should reverse ");
                placeBuyStopOrder(calculateLots(), "algorithm.V_REVERSALBUY", 333, 3);
                placeBuyOrder(calculateLots(), "algorithm.V_BUYHODL", 334);
               }
             else
-               if(posType == POSITION_TYPE_BUY
-                  && isBearishTrend()
-                  && shouldTakeMoreReversalSell)
+               if(
+                  posType == POSITION_TYPE_BUY
+                  //    && isBearishTrend()
+                  //&& shouldTakeMoreReversalSell
+               )
                  {
+                  // Alert("should reverse ");
                   placeSellStopOrder(calculateLots(), "algorithm.V_REVERSALSELL", 444, 3);
                   placeSellOrder(calculateLots(), "algorithm.V_SELLHODL", 445);
                  }
@@ -2549,14 +2760,14 @@ bool checkAccountProfit(double threshold)
 //+------------------------------------------------------------------+
 bool checkAccountHealth(ENUM_POSITION_TYPE type)
   {
-   int equityThreshold = 500;
-   int marginThreshold = 5000;
+   int equityThresholdHealth = 500;
+   int marginThresholdHealth = 5000;
    double profitThreshold = 0.2;
    int timeThreshold = 3600;
 
    return (((calculateOrdersByTime(timeThreshold, type, true) < (type == POSITION_TYPE_BUY ? maxBuyOrders : maxSellOrders)
              || calculateOrdersProfitByTime(timeThreshold, type) > profitThreshold)
-            && (checkAccountEquity(equityThreshold) || checkAccountMargin(marginThreshold))
+            && (checkAccountEquity(equityThresholdHealth) || checkAccountMargin(marginThresholdHealth))
             && calculateOrders(type) < maxOrders
            )
            || calculateOrders(type) == 0);
@@ -2568,16 +2779,16 @@ bool checkAccountHealth(ENUM_POSITION_TYPE type)
 bool criticalConditionsForSellOrder()
   {
    return getRSI(MN1) > 35
-          && (getRSI(MN1) > 40 || checkAccountEquity(1000) || getRSI(H4) > 60)
+          && (getRSI(MN1) > 40 || checkAccountEquity(equityThreshold) || getRSI(H4) > 60)
           && getRSI(W1) > 35
-          && (getRSI(W1) > 40 || checkAccountEquity(1000) || getRSI(H4) > 60)
+          && (getRSI(W1) > 40 || checkAccountEquity(equityThreshold) || getRSI(H4) > 60)
           && getRSI(D1) > 35
           && (getRSI(H4) > 40 || getRSI(M5) > 60)
-          && (getRSI(H4) > 45 || checkAccountEquity(1000) || getRSI(W1) > 60)
+          && (getRSI(H4) > 45 || checkAccountEquity(equityThreshold) || getRSI(W1) > 60)
           && (getRSI(H1) > 40 || getRSI(M5) > 60)
-          && (getRSI(H1) > 45 || checkAccountEquity(1000) || getRSI(H4) > 55)
+          && (getRSI(H1) > 45 || checkAccountEquity(equityThreshold) || getRSI(H4) > 55)
           && getRSI(M30) > 40
-          && (getRSI(M30) > 45 || checkAccountEquity(1000) || getRSI(H1) > 55)
+          && (getRSI(M30) > 45 || checkAccountEquity(equityThreshold) || getRSI(H1) > 55)
           && getRSI(M5) > 35
           && getRSI(M1) > 25
           && (getRSI(M1) > 40
@@ -2594,16 +2805,16 @@ bool criticalConditionsForSellOrder()
 bool criticalConditionsForBuyOrder()
   {
    return getRSI(MN1) < 65
-          && (getRSI(MN1) < 60 || checkAccountEquity(1000) || getRSI(H4) < 40)
+          && (getRSI(MN1) < 60 || checkAccountEquity(equityThreshold) || getRSI(H4) < 40)
           && getRSI(W1) < 65
-          && (getRSI(W1) < 60 || checkAccountEquity(1000) || getRSI(H4) < 40)
+          && (getRSI(W1) < 60 || checkAccountEquity(equityThreshold) || getRSI(H4) < 40)
           && getRSI(D1) < 65
           && (getRSI(H4) < 60 || getRSI(M5) < 40)
-          && (getRSI(H4) < 55 || checkAccountEquity(1000) || getRSI(W1) < 40)
+          && (getRSI(H4) < 55 || checkAccountEquity(equityThreshold) || getRSI(W1) < 40)
           && (getRSI(H1) < 60 || getRSI(M5) < 40)
-          && (getRSI(H1) < 55 || checkAccountEquity(1000) || getRSI(H4) < 45)
+          && (getRSI(H1) < 55 || checkAccountEquity(equityThreshold) || getRSI(H4) < 45)
           && getRSI(M30) < 60
-          && (getRSI(M30) < 55 || checkAccountEquity(1000) || getRSI(H1) < 45)
+          && (getRSI(M30) < 55 || checkAccountEquity(equityThreshold) || getRSI(H1) < 45)
           && getRSI(M5) < 65
           && getRSI(M1) < 75
           && (getRSI(M1) < 60
@@ -2613,6 +2824,45 @@ bool criticalConditionsForBuyOrder()
           && isThisBarBULLISH(15);;
   }
 
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool veryCriticalConditionsForSellOrder()
+  {
+   return (getRSI(H1) > 40
+           && getRSI(M30) > 40
+           && getRSI(M15) > 40)
+          || getRSI(M1) > 60
+          || getRSI(M5) > 60
+          || getRSI(M15) > 60
+          || getRSI(M30) > 60
+          || getRSI(H1) > 60
+          || getRSI(H4) > 60
+          || getRSI(D1) > 60
+          || getRSI(W1) > 60
+          || getRSI(MN1) > 60;
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool veryCriticalConditionsForBuyOrder()
+  {
+   return (getRSI(H1) < 60
+           && getRSI(M30) < 60
+           && getRSI(M15) < 60)
+          || getRSI(M1) < 40
+          || getRSI(M5) < 40
+          || getRSI(M15) < 40
+          || getRSI(M30) < 40
+          || getRSI(H1) < 40
+          || getRSI(H4) < 40
+          || getRSI(D1) < 40
+          || getRSI(W1) < 40
+          || getRSI(MN1) < 40;
+  }
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -2688,7 +2938,7 @@ bool RSIConditionsForSellOrder()
              || (isThisBarBEARISH(30) && getBarSize(30) > 7)
              || (isThisBarBEARISH(60) && getBarSize(60) > 7)
           )
-          && (checkAccountEquity(1000) || isThisBarBEARISH(240) || isThisBarBEARISH(60));
+          && (checkAccountEquity(equityThreshold) || isThisBarBEARISH(240) || isThisBarBEARISH(60));
   }
 
 
@@ -2711,7 +2961,7 @@ bool RSIConditionsForBuyOrder()
              || (isThisBarBULLISH(30) && getBarSize(30) > 7)
              || (isThisBarBULLISH(60) && getBarSize(60) > 7)
           )
-          && (checkAccountEquity(1000) || isThisBarBULLISH(240) || isThisBarBULLISH(60));
+          && (checkAccountEquity(equityThreshold) || isThisBarBULLISH(240) || isThisBarBULLISH(60));
   }
 
 
@@ -2744,12 +2994,12 @@ bool MAConditionsForSellOrder()
              || checkAccountEquity(500)
           )
           && (
-             getMA(M30, _50) > getHighestPrice(M30, 1)
+             getMA(M30, _50) > getHighestPrice(30, 1)
              || isThisBarBEARISH(240)
           )
           && (
-             getMA(M30, _9) > getHighestPrice(M30, 1)
-             || getMA(M30, _20) > getHighestPrice(M30, 1)
+             getMA(M30, _9) > getHighestPrice(30, 1)
+             || getMA(M30, _20) > getHighestPrice(30, 1)
           )
           && (
              getMA(M5, _200) > currentPrice
